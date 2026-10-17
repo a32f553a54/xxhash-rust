@@ -38,8 +38,10 @@ const INITIAL_ACC: Acc = Acc([
 type LongHashFn = fn(&[u8], u64, &[u8]) -> u64;
 type LongHashFn128 = fn(&[u8], u64, &[u8]) -> u128;
 
-#[cfg(all(target_family = "wasm", target_feature = "simd128"))]
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
 type StripeLanes = [[u8; mem::size_of::<core::arch::wasm32::v128>()]; STRIPE_LEN / mem::size_of::<core::arch::wasm32::v128>()];
+#[cfg(all(target_arch = "wasm64", target_feature = "simd128"))]
+type StripeLanes = [[u8; mem::size_of::<core::arch::wasm64::v128>()]; STRIPE_LEN / mem::size_of::<core::arch::wasm64::v128>()];
 #[cfg(all(target_arch = "x86", target_feature = "avx512f"))]
 type StripeLanes = [[u8; mem::size_of::<core::arch::x86::__m512i>()]; STRIPE_LEN / mem::size_of::<core::arch::x86::__m512i>()];
 #[cfg(all(target_arch = "x86_64", target_feature = "avx512f"))]
@@ -213,7 +215,10 @@ fn custom_default_secret(seed: u64) -> [u8; DEFAULT_SECRET_SIZE] {
 fn accumulate_512_wasm(acc: &mut Acc, input: &StripeLanes, secret: &StripeLanes) {
     const LANES: usize = ACC_NB;
 
+    #[cfg(target_arch = "wasm32")]
     use core::arch::wasm32::*;
+    #[cfg(target_arch = "wasm64")]
+    use core::arch::wasm64::*;
 
     let mut idx = 0usize;
     let xacc = acc.0.as_mut_ptr() as *mut v128;
@@ -418,7 +423,10 @@ use accumulate_512_scalar as accumulate_512;
 
 #[cfg(all(target_family = "wasm", target_feature = "simd128"))]
 fn scramble_acc_wasm(acc: &mut Acc, secret: &StripeLanes) {
+    #[cfg(target_arch = "wasm32")]
     use core::arch::wasm32::*;
+    #[cfg(target_arch = "wasm64")]
+    use core::arch::wasm64::*;
 
     let xacc = acc.0.as_mut_ptr() as *mut v128;
     let prime = u64x2_splat(xxh32::PRIME_1 as _);

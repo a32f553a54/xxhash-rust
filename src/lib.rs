@@ -78,6 +78,7 @@
 #![no_std]
 #![warn(missing_docs)]
 #![allow(clippy::style)]
+#![cfg_attr(all(target_arch = "wasm64", target_feature = "simd128"), feature(simd_wasm64))]
 
 #[cfg(feature = "std")]
 extern crate std;
